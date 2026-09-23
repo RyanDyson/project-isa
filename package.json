@@ -1,0 +1,12 @@
+{
+  "name": "fyp-codebase",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n frontend,backend -c cyan,green \"bun --cwd frontend dev\" \"bun --cwd backend dev\"",
+    "dev:frontend": "bun --cwd frontend dev",
+    "dev:backend": "bun --cwd backend dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
