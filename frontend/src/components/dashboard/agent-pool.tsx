@@ -1,4 +1,4 @@
-import { Panel } from "@/app/_components/panel";
+import { Panel } from "@/components/dashboard/panel";
 
 import { cn } from "@/lib/utils";
 
@@ -11,8 +11,20 @@ type Agent = {
 };
 
 const AGENTS: Agent[] = [
-  { id: "MM-01", type: "market-making", pnl: 412.5, orders: 1842, active: true },
-  { id: "MM-02", type: "market-making", pnl: 388.1, orders: 1709, active: true },
+  {
+    id: "MM-01",
+    type: "market-making",
+    pnl: 412.5,
+    orders: 1842,
+    active: true,
+  },
+  {
+    id: "MM-02",
+    type: "market-making",
+    pnl: 388.1,
+    orders: 1709,
+    active: true,
+  },
   { id: "MO-01", type: "momentum", pnl: -120.4, orders: 512, active: true },
   { id: "SP-01", type: "spoofing", pnl: -28.7, orders: 2931, active: true },
   { id: "RL-01", type: "rl-trading", pnl: 156.2, orders: 744, active: true },
@@ -40,14 +52,21 @@ export function AgentPool({ className }: { className?: string }) {
     <Panel
       className={className}
       title="Agent Pool"
-      action={<span className="text-xs text-muted-foreground">{AGENTS.filter((a) => a.active).length}/{AGENTS.length} active</span>}
+      action={
+        <span className="text-muted-foreground text-xs">
+          {AGENTS.filter((a) => a.active).length}/{AGENTS.length} active
+        </span>
+      }
     >
       <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 gap-y-2 text-xs">
         <span className="text-muted-foreground">Agent</span>
-        <span className="text-right text-muted-foreground">P&L ($)</span>
-        <span className="text-right text-muted-foreground">Orders</span>
+        <span className="text-muted-foreground text-right">P&L ($)</span>
+        <span className="text-muted-foreground text-right">Orders</span>
         {AGENTS.map((a) => (
-          <div key={a.id} className="col-span-3 grid grid-cols-[1fr_auto_auto] items-center gap-x-4">
+          <div
+            key={a.id}
+            className="col-span-3 grid grid-cols-[1fr_auto_auto] items-center gap-x-4"
+          >
             <div className="flex min-w-0 items-center gap-2">
               <span className="truncate font-medium">{a.id}</span>
               <span
@@ -59,7 +78,7 @@ export function AgentPool({ className }: { className?: string }) {
                 {typeLabel[a.type]}
               </span>
               {!a.active && (
-                <span className="shrink-0 rounded-full border border-border px-1.5 py-0.5 text-muted-foreground">
+                <span className="border-border text-muted-foreground shrink-0 rounded-full border px-1.5 py-0.5">
                   idle
                 </span>
               )}
@@ -76,7 +95,7 @@ export function AgentPool({ className }: { className?: string }) {
             >
               {a.pnl.toFixed(2)}
             </span>
-            <span className="text-right tabular-nums text-muted-foreground">
+            <span className="text-muted-foreground text-right tabular-nums">
               {a.orders.toLocaleString()}
             </span>
           </div>

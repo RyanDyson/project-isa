@@ -1,4 +1,4 @@
-import { Panel } from "@/app/_components/panel";
+import { Panel } from "@/components/dashboard/panel";
 import { cn } from "@/lib/utils";
 
 type Policy = {
@@ -11,10 +11,38 @@ type Policy = {
 };
 
 const POLICIES: Policy[] = [
-  { name: "Fee per lot", value: 0.02, unit: "$", min: 0, max: 0.1, delta: 0.005 },
-  { name: "Quote jitter penalty", value: 0.35, unit: "", min: 0, max: 1, delta: 0.02 },
-  { name: "Max order size", value: 500, unit: "sh", min: 100, max: 1000, delta: 0 },
-  { name: "Cancellation throttle", value: 0.6, unit: "", min: 0, max: 1, delta: -0.05 },
+  {
+    name: "Fee per lot",
+    value: 0.02,
+    unit: "$",
+    min: 0,
+    max: 0.1,
+    delta: 0.005,
+  },
+  {
+    name: "Quote jitter penalty",
+    value: 0.35,
+    unit: "",
+    min: 0,
+    max: 1,
+    delta: 0.02,
+  },
+  {
+    name: "Max order size",
+    value: 500,
+    unit: "sh",
+    min: 100,
+    max: 1000,
+    delta: 0,
+  },
+  {
+    name: "Cancellation throttle",
+    value: 0.6,
+    unit: "",
+    min: 0,
+    max: 1,
+    delta: -0.05,
+  },
 ];
 
 export function PlannerPanel() {
@@ -52,7 +80,7 @@ export function PlannerPanel() {
                   )}
                 </span>
               </div>
-              <div className="h-1.5 rounded-full bg-muted">
+              <div className="bg-muted h-1.5 rounded-full">
                 <div
                   className="h-1.5 rounded-full bg-amber-500 transition-all"
                   style={{ width: `${pctPct}%` }}

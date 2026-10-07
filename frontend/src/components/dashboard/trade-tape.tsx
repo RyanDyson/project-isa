@@ -1,4 +1,4 @@
-import { Panel } from "@/app/_components/panel";
+import { Panel } from "@/components/dashboard/panel";
 import { cn } from "@/lib/utils";
 
 type Trade = {
@@ -25,9 +25,9 @@ export function TradeTape() {
   return (
     <Panel
       title="Trade Tape"
-      action={<span className="text-xs text-muted-foreground">last 10</span>}
+      action={<span className="text-muted-foreground text-xs">last 10</span>}
     >
-      <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+      <div className="text-muted-foreground grid grid-cols-3 gap-2 text-xs">
         <span>Time</span>
         <span className="text-right">Price</span>
         <span className="text-right">Size</span>
@@ -36,7 +36,7 @@ export function TradeTape() {
         {TRADES.map((t) => (
           <div
             key={t.time}
-            className="grid grid-cols-3 gap-2 rounded px-1 py-0.5 text-xs tabular-nums hover:bg-muted/50"
+            className="hover:bg-muted/50 grid grid-cols-3 gap-2 rounded px-1 py-0.5 text-xs tabular-nums"
           >
             <span className="text-muted-foreground">{t.time}</span>
             <span
@@ -47,7 +47,7 @@ export function TradeTape() {
             >
               {t.price.toFixed(2)}
             </span>
-            <span className="text-right text-muted-foreground">{t.size}</span>
+            <span className="text-muted-foreground text-right">{t.size}</span>
           </div>
         ))}
       </div>

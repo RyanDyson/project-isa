@@ -1,4 +1,4 @@
-import { Panel } from "@/app/_components/panel";
+import { Panel } from "@/components/dashboard/panel";
 import { cn } from "@/lib/utils";
 
 type Level = { price: number; size: number };
@@ -49,9 +49,11 @@ export function OrderBook() {
   return (
     <Panel
       title="Order Book · AAPL"
-      action={<span className="text-xs text-muted-foreground">Spread 0.042</span>}
+      action={
+        <span className="text-muted-foreground text-xs">Spread 0.042</span>
+      }
     >
-      <div className="grid grid-cols-2 text-xs text-muted-foreground">
+      <div className="text-muted-foreground grid grid-cols-2 text-xs">
         <span className="px-4">Price</span>
         <span className="px-4 text-right">Size</span>
       </div>
@@ -60,9 +62,9 @@ export function OrderBook() {
           <Row key={l.price} level={l} side="ask" />
         ))}
       </div>
-      <div className="my-1.5 flex items-center justify-between border-y border-border bg-muted/40 px-4 py-1.5 text-xs font-semibold tabular-nums">
+      <div className="border-border bg-muted/40 my-1.5 flex items-center justify-between border-y px-4 py-1.5 text-xs font-semibold tabular-nums">
         <span>{(101.39 + 101.48).toFixed(2)}</span>
-        <span className="font-normal text-muted-foreground">mid</span>
+        <span className="text-muted-foreground font-normal">mid</span>
         <span>{(101.48 - 101.39).toFixed(2)}</span>
       </div>
       <div>

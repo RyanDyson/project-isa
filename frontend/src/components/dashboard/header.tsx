@@ -12,14 +12,14 @@ export function Header() {
   const [speed, setSpeed] = useState<(typeof speeds)[number]>("1x");
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-card px-6">
+    <header className="border-border bg-card flex h-14 items-center justify-between border-b px-6">
       <div className="flex items-center gap-3">
-        <div className="flex size-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
+        <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md text-sm font-bold">
           M
         </div>
         <div>
           <p className="text-sm leading-none font-semibold">MarketSim</p>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-xs">
             Co-Adaptive Exchange Simulation
           </p>
         </div>
@@ -41,7 +41,7 @@ export function Header() {
         </span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="flex overflow-hidden rounded-md border border-border">
+        <div className="border-border flex overflow-hidden rounded-md border">
           {speeds.map((s) => (
             <button
               key={s}
@@ -49,7 +49,7 @@ export function Header() {
               className={cn(
                 "px-2.5 py-1.5 text-xs transition-colors",
                 speed === s
-                  ? "bg-muted font-medium text-foreground"
+                  ? "bg-muted text-foreground font-medium"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -57,7 +57,11 @@ export function Header() {
             </button>
           ))}
         </div>
-        <Button variant="outline" size="sm" onClick={() => setRunning(!running)}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setRunning(!running)}
+        >
           {running ? "Pause" : "Resume"}
         </Button>
         <Button size="sm">Reset</Button>

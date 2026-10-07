@@ -16,12 +16,12 @@ export function Panel({
   return (
     <section
       className={cn(
-        "flex flex-col rounded-lg border border-border bg-card",
+        "border-border bg-card flex flex-col rounded-lg border",
         className,
       )}
     >
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+      <div className="border-border flex items-center justify-between border-b px-4 py-3">
+        <h2 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           {title}
         </h2>
         {action}

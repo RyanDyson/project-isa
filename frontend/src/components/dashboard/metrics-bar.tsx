@@ -5,7 +5,12 @@ const metrics = [
   { label: "Volatility", value: "1.82%", delta: "+0.12", positive: false },
   { label: "Bid-Ask Spread", value: "0.042", delta: "-0.003", positive: true },
   { label: "Volume (1m)", value: "24,510", delta: "+1,204", positive: true },
-  { label: "Cancellation Rate", value: "12.4%", delta: "+2.1%", positive: false },
+  {
+    label: "Cancellation Rate",
+    value: "12.4%",
+    delta: "+2.1%",
+    positive: false,
+  },
   { label: "Order-to-Trade", value: "3.2x", delta: "-0.4x", positive: true },
 ];
 
@@ -15,9 +20,9 @@ export function MetricsBar() {
       {metrics.map((m) => (
         <div
           key={m.label}
-          className="rounded-lg border border-border bg-card px-4 py-3"
+          className="border-border bg-card rounded-lg border px-4 py-3"
         >
-          <p className="text-xs text-muted-foreground">{m.label}</p>
+          <p className="text-muted-foreground text-xs">{m.label}</p>
           <p className="mt-1 text-lg font-semibold tabular-nums">{m.value}</p>
           <p
             className={cn(

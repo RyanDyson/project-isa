@@ -1,4 +1,4 @@
-import { Panel } from "@/app/_components/panel";
+import { Panel } from "@/components/dashboard/panel";
 
 const POINTS = 72;
 
@@ -23,7 +23,9 @@ export function PriceChart() {
     const y = pad + (1 - (v - min) / (max - min)) * (h - 2 * pad);
     return [x, y] as const;
   });
-  const line = points.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const line = points
+    .map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`)
+    .join(" ");
   const area = `0,${h} ${line} ${w},${h}`;
   const last = data[data.length - 1] ?? 0;
 
@@ -45,8 +47,16 @@ export function PriceChart() {
         >
           <defs>
             <linearGradient id="priceFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="oklch(0.7 0.15 160)" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="oklch(0.7 0.15 160)" stopOpacity="0" />
+              <stop
+                offset="0%"
+                stopColor="oklch(0.7 0.15 160)"
+                stopOpacity="0.25"
+              />
+              <stop
+                offset="100%"
+                stopColor="oklch(0.7 0.15 160)"
+                stopOpacity="0"
+              />
             </linearGradient>
           </defs>
           {[0.25, 0.5, 0.75].map((f) => (
@@ -69,14 +79,14 @@ export function PriceChart() {
             vectorEffect="non-scaling-stroke"
           />
         </svg>
-        <span className="absolute top-0 left-0 text-xs text-muted-foreground tabular-nums">
+        <span className="text-muted-foreground absolute top-0 left-0 text-xs tabular-nums">
           {max.toFixed(2)}
         </span>
-        <span className="absolute bottom-0 left-0 text-xs text-muted-foreground tabular-nums">
+        <span className="text-muted-foreground absolute bottom-0 left-0 text-xs tabular-nums">
           {min.toFixed(2)}
         </span>
       </div>
-      <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+      <div className="text-muted-foreground mt-2 flex justify-between text-xs">
         <span>T-60s</span>
         <span>T-30s</span>
         <span>now</span>
