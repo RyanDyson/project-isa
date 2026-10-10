@@ -14,11 +14,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: market_sim
-    # Host port 5433 to avoid clashing with the frontend Postgres on 5432
+    # Single Postgres instance (host port 5433):
+    # - "market_sim" DB — backend (simulation logs + Better Auth schema)
     ports:
       - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
 volumes:
   redis-data:

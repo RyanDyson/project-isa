@@ -102,7 +102,11 @@ A two-tier storage system:
 
 ### Frontend Dashboard
 
-The user-facing layer for monitoring and visualizing the whole system in real time, built with **Next.js** and **React**.
+The user-facing layer for monitoring and visualizing the whole system in real time, built with **Next.js** and **React**. All data — user accounts/sessions (Better Auth-compatible email/password auth) and simulation state — is served by the FastAPI backend through a `/api/auth` proxy rewrite plus direct calls to the backend API.
+
+### Auth
+
+Email/password authentication is implemented in the FastAPI backend (`app/auth/`, `app/db/`), exposing Better Auth-compatible endpoints that the standard `better-auth/react` client consumes. Passwords are scrypt-hashed; sessions are stored in PostgreSQL via SQLAlchemy ORM models mirroring the Better Auth schema (`user`, `session`, `account`, `verification`).
 
 ## Technology Stack
 
@@ -111,8 +115,8 @@ The user-facing layer for monitoring and visualizing the whole system in real ti
 | Simulation core | Python, NumPy, Pandas                  |
 | RL agents       | Stable-Baselines3, Gymnasium, asyncio  |
 | Data ingestion  | Alpaca Python SDK (REST + WebSocket)   |
-| Storage         | Redis, PostgreSQL                      |
-| API layer       | FastAPI                                |
+| Storage / ORM   | Redis, PostgreSQL, SQLAlchemy (async)  |
+| Auth            | FastAPI auth endpoints, better-auth client |
 | Frontend        | Next.js, React                         |
 | Dev tooling     | OpenCode, Docker, TensorBoard, Bun, uv |
 
@@ -122,15 +126,17 @@ The user-facing layer for monitoring and visualizing the whole system in real ti
 Codebase/
 ├── backend/                # Simulation backend (Python)
 │   ├── app/
-│   │   ├── main.py         # FastAPI API layer entrypoint
+│   │   ├── main.py         # FastAPI API layer entrypoint (+ /api/auth routes)
 │   │   ├── config.py       # Settings from .env
+│   │   ├── auth/           # Better Auth-compatible endpoints, ORM models
+│   │   ├── db/             # Async SQLAlchemy engine/session
 │   │   ├── core/           # Simulation core: LOB engine, metrics aggregator
 │   │   ├── ingestion/      # Replay/synthetic generator, normalizer/book seeder
 │   │   ├── agents/         # Agent pool, Gymnasium env, order queue
 │   │   └── storage/        # Redis fast layer, PostgreSQL persistence
 │   ├── docker-compose.yml  # Redis + PostgreSQL containers
 │   └── pyproject.toml      # uv-managed dependencies
-└── frontend/               # Dashboard (Next.js + React, tRPC, Drizzle)
+└── frontend/               # Dashboard (Next.js + React)
 ```
 
 ## Getting Started
@@ -160,3 +166,10 @@ bun dev
 `bun dev` starts both servers concurrently. Individual servers can be run with `bun dev:frontend` and `bun dev:backend`.
 
 Environment variables are configured via `backend/.env` (see `backend/.env.example`) and `frontend/.env` (see `frontend/.env.example`).
+
+Configuration:
+
+- `backend/.env` — `DATABASE_URL` (`postgresql+asyncpg://...`, host port 5433), `REDIS_URL`, Alpaca keys
+- `frontend/.env` — `BACKEND_URL` (defaults to `http://localhost:8000`)
+
+Auth: register via the dashboard's sign-up form (`/api/auth/*` proxies to the backend). First-time setup creates the Better Auth schema tables automatically on backend startup.

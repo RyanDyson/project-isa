@@ -57,7 +57,7 @@ export function AuthForm() {
   });
 
   return (
-    <Card className="min-w-80">
+    <Card className="min-w-80 z-50 bg-background/90 backdrop-blur-md ">
       <form
         className="flex min-w-72 flex-col gap-4"
         onSubmit={(e) => {

@@ -3,7 +3,6 @@ import "@/styles/globals.css";
 import { type Metadata } from "next";
 import localFont from "next/font/local";
 
-import { TRPCReactProvider } from "@/trpc/react";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/components/global/providers";
 
