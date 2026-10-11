@@ -6,8 +6,8 @@ import { cache } from "react";
 import { env } from "@/env";
 
 /**
- * Session shape returned by the Python backend's Better Auth-compatible
- * /api/auth/get-session endpoint.
+ * Session shape returned by the Python backend's /api/auth/get-session
+ * endpoint.
  */
 export type Session = {
   user: {
@@ -29,8 +29,8 @@ export type Session = {
  * backend so RSC pages can gate rendering on an active session.
  */
 export const getSession = cache(async (): Promise<Session> => {
-  const heads = new Headers(await headers());
-  const cookie = heads.get("cookie") ?? "";
+  const requestHeaders = new Headers(await headers());
+  const cookie = requestHeaders.get("cookie") ?? "";
 
   const response = await fetch(`${env.BACKEND_URL}/api/auth/get-session`, {
     headers: { cookie },

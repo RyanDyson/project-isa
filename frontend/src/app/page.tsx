@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AuthForm } from "@/components/auth/auth-form";
-import { getSession } from "@/server/better-auth/server";
+import { getSession } from "@/server/auth/session";
 import { CloudShader } from "@/components/ui/cloud-shader";
 
 export default async function Home() {

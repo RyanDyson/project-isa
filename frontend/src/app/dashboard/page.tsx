@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { Header } from "@/components/dashboard/header";
-import { getSession } from "@/server/better-auth/server";
+import { getSession } from "@/server/auth/session";
 
 export default async function Dashboard() {
   const session = await getSession();
@@ -10,15 +9,7 @@ export default async function Dashboard() {
 
   return (
     <main className="bg-background flex min-h-screen flex-col">
-      <Header />
-      <DashboardBody />
+      
     </main>
-  );
-}
-
-function DashboardBody() {
-  return (
-    <div className="flex flex-1 flex-col gap-4 p-6">
-    </div>
   );
 }

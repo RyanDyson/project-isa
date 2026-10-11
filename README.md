@@ -106,7 +106,7 @@ The user-facing layer for monitoring and visualizing the whole system in real ti
 
 ### Auth
 
-Email/password authentication is implemented in the FastAPI backend (`app/auth/`, `app/db/`), exposing Better Auth-compatible endpoints that the standard `better-auth/react` client consumes. Passwords are scrypt-hashed; sessions are stored in PostgreSQL via SQLAlchemy ORM models mirroring the Better Auth schema (`user`, `session`, `account`, `verification`).
+Email/password authentication is implemented in the FastAPI backend (`app/auth/`, `app/db/`), exposing Better Auth-compatible endpoints that the dashboard's minimal fetch client (`frontend/src/lib/auth-client.ts`) consumes. Passwords are scrypt-hashed; sessions are stored in PostgreSQL via SQLAlchemy ORM models mirroring the Better Auth schema (`user`, `session`, `account`, `verification`).
 
 ## Technology Stack
 
@@ -116,7 +116,7 @@ Email/password authentication is implemented in the FastAPI backend (`app/auth/`
 | RL agents       | Stable-Baselines3, Gymnasium, asyncio  |
 | Data ingestion  | Alpaca Python SDK (REST + WebSocket)   |
 | Storage / ORM   | Redis, PostgreSQL, SQLAlchemy (async)  |
-| Auth            | FastAPI auth endpoints, better-auth client |
+| Auth            | FastAPI auth endpoints + fetch client      |
 | Frontend        | Next.js, React                         |
 | Dev tooling     | OpenCode, Docker, TensorBoard, Bun, uv |
 
