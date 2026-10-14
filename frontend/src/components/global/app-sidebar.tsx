@@ -69,60 +69,13 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Engine</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <EngineStatusWidget />
-          </SidebarGroupContent>
-        </SidebarGroup>
+       
       </SidebarContent>
 
       <SidebarFooter>
         <SignOutButton />
       </SidebarFooter>
     </Sidebar>
-  );
-}
-
-/** Placeholder engine playback controls, wired to nothing until the
- * FastAPI control endpoints exist. Lives in the sidebar so the dashboard
- * canvas stays focused on data blocks. */
-function EngineStatusWidget() {
-  const [running, setRunning] = useState(false);
-
-  return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <div className="flex flex-col gap-2 rounded-md border p-2">
-          <div className="flex items-center gap-2">
-            <span
-              className={
-                running
-                  ? "size-1.5 animate-pulse rounded-full bg-emerald-500"
-                  : "size-1.5 rounded-full bg-amber-500"
-              }
-            />
-            <span className="text-xs font-medium">
-              {running ? "Running" : "Idle"}
-            </span>
-          </div>
-          <div className="flex gap-1">
-            <Button
-              size="xs"
-              variant={running ? "outline" : "secondary"}
-              className="flex-1"
-              onClick={() => setRunning((r) => !r)}
-            >
-              {running ? "Pause" : "Start"}
-            </Button>
-            <Button size="xs" variant="outline" className="flex-1">
-              <RiRefreshLine />
-              Reset
-            </Button>
-          </div>
-        </div>
-      </SidebarMenuItem>
-    </SidebarMenu>
   );
 }
 

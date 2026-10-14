@@ -30,6 +30,7 @@ from .orders import (
 )
 from .book import Book
 from .engine import LimitOrderBook
+from .registry import SymbolRegistry
 
 __all__ = [
     "Side",
@@ -57,4 +58,5 @@ __all__ = [
     "Limit",
     "Book",
     "LimitOrderBook",
+    "SymbolRegistry",
 ]

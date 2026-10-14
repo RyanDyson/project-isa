@@ -2,8 +2,7 @@
 
 `bids`/`asks` hold resting limits, `stop_buys`/`stop_sells` pending stops;
 keys are price ticks and values are owning Limit levels. SortedDict keeps
-levels ordered (min/max peek O(1)-ish, insert/delete O(log n)), replacing
-the hand-rolled AVL (see pyproject: sortedcontainers).
+levels ordered (min/max peek O(1)-ish, insert/delete O(log n)).
 """
 
 from sortedcontainers import SortedDict

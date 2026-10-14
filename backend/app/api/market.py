@@ -1,42 +1,35 @@
-"""REST endpoints exposing the LOB engine to the dashboard.
+"""REST endpoints exposing the LOB engine(s) to the dashboard.
 
-Module-level engine singleton: FastAPI must run with a single worker so the
-single-writer book is only ever mutated by this process. Auth linkage
-(agent_id -> session user) lands later.
+Route segment ``{symbol}`` routes to that ticker's own single-writer book
+(see app/core/lob/registry.py). Module-level registry singleton: FastAPI must
+run with a single worker. Auth linkage (agent_id -> session user) lands later.
 """
 
 from collections import deque
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Path
 from pydantic import BaseModel
 
 from app.core.lob import (
     LimitOrder,
-    LimitOrderBook,
+    SymbolRegistry,
     MarketOrder,
     MarketLimitOrder,
     OrderError,
-    OrderRejectedError,
     Rejected,
     Side,
     StopLimitOrder,
     StopOrder,
     StopTriggered,
     from_ticks,
-    to_ticks,
 )
-from app.core.lob.events import (
-    Accepted,
-    Cancelled,
-    EngineEvent,
-    Modified,
-    Trade,
-)
+from app.core.lob.engine import LimitOrderBook
+from app.core.lob.events import Accepted, Cancelled, EngineEvent, Modified, Trade
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
-engine = LimitOrderBook()
-recent_trades: deque[dict] = deque(maxlen=200)
+registry = SymbolRegistry()
+recent_trades: dict[str, deque[dict]] = {}
 
 
 class SubmitOrderBody(BaseModel):
@@ -63,12 +56,15 @@ class PriceFeedBody(BaseModel):
     price: float
 
 
+_SYMBOL_PATH = Path(..., min_length=1, max_length=16)
+
+
+def _trade_buffer(symbol: str) -> deque[dict]:
+    return recent_trades.setdefault(symbol, deque(maxlen=200))
+
+
 def _build_order(body: SubmitOrderBody):
-    kwargs = dict(
-        agent_id=body.agent_id,
-        side=body.side,
-        quantity=body.quantity,
-    )
+    kwargs = dict(agent_id=body.agent_id, side=body.side, quantity=body.quantity)
     if body.type == "market":
         return MarketOrder(**kwargs)
     if body.type == "limit":
@@ -77,7 +73,9 @@ def _build_order(body: SubmitOrderBody):
         return LimitOrder(limit_price=body.limit_price, **kwargs)
     if body.type == "market-limit":
         if body.limit_price is None:
-            raise HTTPException(status_code=422, detail="limit_price is required for market-limit orders")
+            raise HTTPException(
+                status_code=422, detail="limit_price is required for market-limit orders"
+            )
         return MarketLimitOrder(limit_price=body.limit_price, **kwargs)
     if body.type == "stop":
         if body.stop_price is None:
@@ -132,7 +130,11 @@ def _event_as_dict(event: EngineEvent) -> dict:
             "reason": event.reason,
         }
     if isinstance(event, Modified):
-        return {"event": "modified", "order_id": event.order.order_id, "order": _order_as_dict(event.order)}
+        return {
+            "event": "modified",
+            "order_id": event.order.order_id,
+            "order": _order_as_dict(event.order),
+        }
     if isinstance(event, Cancelled):
         return {"event": "cancelled", "order_id": event.order_id}
     if isinstance(event, StopTriggered):
@@ -144,13 +146,13 @@ def _event_as_dict(event: EngineEvent) -> dict:
     raise TypeError(f"unmapped event {type(event)}")
 
 
-def _collect_trades(events: list[EngineEvent]) -> None:
+def _collect_trades(symbol: str, events: list[EngineEvent]) -> None:
     for event in events:
         if isinstance(event, Trade):
-            recent_trades.append(_event_as_dict(event))
+            _trade_buffer(symbol).append(_event_as_dict(event))
 
 
-def _depth(side: Side, depth: int) -> list[dict]:
+def _depth(engine: LimitOrderBook, side: Side, depth: int) -> list[dict]:
     ladder = engine._book.asks if side is Side.SELL else engine._book.bids
     items = list(ladder.items())
     if side is Side.BUY:
@@ -165,34 +167,55 @@ def _depth(side: Side, depth: int) -> list[dict]:
     ]
 
 
-# -- submissions ---------------------------------------------------------------
+# -- symbols --------------------------------------------------------------------
 
 
-@router.post("/orders")
-def submit_order(body: SubmitOrderBody) -> dict:
+@router.get("/symbols")
+def list_symbols() -> dict:
+    return {"symbols": registry.symbols()}
+
+
+# -- submissions ------------------------------------------------------------------
+
+
+@router.post("/{symbol}/orders")
+def submit_order(
+    symbol: str = _SYMBOL_PATH,
+    body: SubmitOrderBody = Body(...),
+) -> dict:
     order = _build_order(body)
+    engine = registry.book(symbol)
     try:
         events = engine.submit(order)
     except OrderError as error:
         raise HTTPException(status_code=400, detail=str(error))
-    _collect_trades(events)
-    accepted = next(
-        (e for e in events if isinstance(e, Accepted)), None
-    )
+    _collect_trades(symbol, events)
+    accepted = next((e for e in events if isinstance(e, Accepted)), None)
     return {
+        "symbol": symbol.upper(),
         "order_id": accepted.order.order_id if accepted else None,
         "events": [_event_as_dict(event) for event in events],
     }
 
 
-@router.post("/orders/{order_id}/cancel")
-def cancel_order(order_id: int, body: CancelBody) -> dict:
+@router.post("/{symbol}/orders/{order_id}/cancel")
+def cancel_order(
+    order_id: int,
+    body: CancelBody,
+    symbol: str = _SYMBOL_PATH,
+) -> dict:
+    engine = registry.book(symbol)
     outcome = engine.cancel(order_id=order_id, agent_id=body.agent_id)
     return {"outcome": _event_as_dict(outcome)}
 
 
-@router.patch("/orders/{order_id}")
-def modify_order(order_id: int, body: ModifyOrderBody) -> dict:
+@router.patch("/{symbol}/orders/{order_id}")
+def modify_order(
+    order_id: int,
+    body: ModifyOrderBody,
+    symbol: str = _SYMBOL_PATH,
+) -> dict:
+    engine = registry.book(symbol)
     try:
         outcome = engine.modify(
             order_id=order_id,
@@ -206,36 +229,44 @@ def modify_order(order_id: int, body: ModifyOrderBody) -> dict:
     return {"outcome": _event_as_dict(outcome)}
 
 
-@router.post("/price")
-def feed_price(body: PriceFeedBody) -> dict:
+@router.post("/{symbol}/price")
+def feed_price(
+    symbol: str = _SYMBOL_PATH,
+    body: PriceFeedBody = Body(...),
+) -> dict:
     """Dev convenience: feeds the last traded price (standing in for the
     ingestion pipeline until it exists)."""
+    engine = registry.book(symbol)
     try:
         events = engine.update_market_price(body.price)
     except OrderError as error:
         raise HTTPException(status_code=400, detail=str(error))
-    _collect_trades(events)
+    _collect_trades(symbol, events)
     return {
+        "symbol": symbol.upper(),
         "last_trade_price": engine.last_trade_price,
         "events": [_event_as_dict(event) for event in events],
     }
 
 
-# -- reads ----------------------------------------------------------------------
+# -- reads --------------------------------------------------------------------------
 
 
-@router.get("/book")
-def get_book(depth: int = 10) -> dict:
+@router.get("/{symbol}/book")
+def get_book(symbol: str = _SYMBOL_PATH, depth: int = 10) -> dict:
+    engine = registry.book(symbol)
     best_bid, best_ask = engine.get_best_bid_ask()
     return {
+        "symbol": symbol.upper(),
         "best_bid": best_bid,
         "best_ask": best_ask,
         "last_trade_price": engine.last_trade_price,
-        "bids": _depth(Side.BUY, depth),
-        "asks": _depth(Side.SELL, depth),
+        "bids": _depth(engine, Side.BUY, depth),
+        "asks": _depth(engine, Side.SELL, depth),
     }
 
 
-@router.get("/trades")
-def get_trades(limit: int = 50) -> list[dict]:
-    return list(recent_trades)[-limit:]
+@router.get("/{symbol}/trades")
+def get_trades(symbol: str = _SYMBOL_PATH, limit: int = 50) -> list[dict]:
+    buffer = _trade_buffer(symbol)
+    return list(buffer)[-limit:]
