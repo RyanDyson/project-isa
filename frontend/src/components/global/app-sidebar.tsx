@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   RiLogoutCircleRLine,
   RiRefreshLine,
   RiRobot2Line,
   RiScales3Line,
+  RiAddLine,
 } from "@remixicon/react";
 
 import {
@@ -21,14 +21,11 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
+
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { useWorkspace } from "@/components/global/workspace";
 
 export function AppSidebar() {
-  const pathname = usePathname();
-  const { openDialog } = useWorkspace();
 
   return (
     <Sidebar variant="inset">
@@ -40,68 +37,34 @@ export function AppSidebar() {
               render={<div className="flex w-full flex-col items-start" />}
             >
               <div className="flex items-center gap-2">
-                <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md text-sm font-bold">
-                  M
-                </div>
-                <span className="text-sm font-semibold">MarketSim</span>
+                <span className="text-sm font-semibold">Agentic Trading Sandbox</span>
               </div>
-              <span className="text-muted-foreground text-xs">
-                Co-Adaptive Exchange Simulation
-              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <SidebarSeparator />
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
-          <SidebarGroupContent>
+        <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={pathname === "/dashboard"}
-                  tooltip="Overview"
-                  render={<Link href="/dashboard" />}
-                >
-                  Overview
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip="Add a block to the canvas"
-                  onClick={() => openDialog("add-block")}
-                >
-                  Add block
-                </SidebarMenuButton>
+                <Button variant="gradient_primary" className="w-full">
+                    Add View
+                    <RiAddLine className="size-4" />
+                </Button>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
+          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+
         </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel>Simulation controls</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip="Running agents"
-                  onClick={() => openDialog("agents")}
-                >
-                  <RiRobot2Line />
-                  Agents
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip="RL exchange planner"
-                  onClick={() => openDialog("planner")}
-                >
-                  <RiScales3Line />
-                  RL Planner
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+            
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

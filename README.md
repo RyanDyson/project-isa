@@ -1,12 +1,12 @@
-# Project ISA - Agentic Trading Sandbox
+# Agentic Trading Sandbox
 
-CityUHK CS FYP 2027
+A simulated market sandbox markets for market microstructure research. 
 
-A two-level co-adaptive framework for simulating financial markets. The lower level is a population of trading agents that submit orders to a central limit order book (LOB) matching engine acting as the virtual exchange. The upper level is a reinforcement-learning exchange planner that observes the market as a whole and adjusts its policy in response to the population's evolving behaviour.
 
-The design principle throughout is a **strict separation between the single-writer matching engine and the many concurrent agents around it**, so that concurrency never compromises the correctness of order matching.
+This document mirrors covers the project design, architecture overview, and major technical components.
 
-This document mirrors the project design (Architecture Overview, and the Major Technical Components / Figure 1 sections).
+To know more about the project, [read the white paper]().
+
 
 ## Architecture Diagram
 
@@ -61,11 +61,18 @@ flowchart LR
   class dashboard dashboardStyle
 ```
 
-The system is organized into three layers: a **simulation core** that hosts the market and its agents, a **data and persistence layer** that feeds and records the simulation, and a **frontend layer** that makes the simulation observable and controllable in real time.
+The system is organized into five layers
+ - a **data ingestion pipeline** that pulls in and stores data from other layers and third-party data aswell
+ - a **simulation core** that hosts the exchange and aggregates market metrics
+ - a **agents layer** which is a swarm of agents that mimic certain destabilising trading behaviours (e.g. HFT, sentiment-driven investment, spoofing, and quote-stuffing)
+ - a **exchange planner** that watches over the exchange and changes regulations and policies
+ - a **frontend layer** that makes the simulation observable and controllable in real time.
 
 ## Major Components
 
 ### Data Ingestion Pipeline
+
+[More Details]()
 
 Feeds the rest of the system with external market data and converts it into a format the simulation engine can run. Market data is accessed through the official **Alpaca Python SDK** via REST (historical data, recovery of missing information) and WebSocket (continuous stream of trades, quotes, and market updates).
 
@@ -73,6 +80,8 @@ Feeds the rest of the system with external market data and converts it into a fo
 - **Data Normalizer and Book Seeder** — converts incoming data into a consistent internal format by standardizing timestamps, symbols, prices, quantities, and event types. Normalized data initializes or updates the simulated market.
 
 ### Simulation Core
+
+[More Details](/backend/app/core/README.md)
 
 The central part of the project, built primarily in Python for its integration with RL and data-processing libraries.
 
@@ -83,7 +92,6 @@ The central part of the project, built primarily in Python for its integration w
 
 A service running trading agents and planners concurrently. RL agents are built on **Stable-Baselines3**, with **Gymnasium** defining how an agent observes, acts, and receives reward. Agents run concurrently and asynchronously via **asyncio**, submitting orders through a **Redis Streams** order queue to the single-writer matching engine.
 
-Agent types:
 
 | Agent               | Role                                                               |
 | ------------------- | ------------------------------------------------------------------ |
