@@ -1,0 +1,4 @@
+-- Placeholder for first-init SQL of the postgres-data volume
+-- (docker-entrypoint-initdb.d). The "market_sim" database is created by
+-- POSTGRES_DB in docker-compose.yml; auth tables are created by the app
+-- (app.db.init_db) on startup.
