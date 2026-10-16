@@ -25,10 +25,12 @@ from app.core.lob import (
 )
 from app.core.lob.engine import LimitOrderBook
 from app.core.lob.events import Accepted, Cancelled, EngineEvent, Modified, Trade
+from app.storage.pipeline import MarketPipeline
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
 registry = SymbolRegistry()
+pipeline = MarketPipeline(registry)
 recent_trades: dict[str, deque[dict]] = {}
 
 
@@ -167,7 +169,17 @@ def _depth(engine: LimitOrderBook, side: Side, depth: int) -> list[dict]:
     ]
 
 
-# -- symbols --------------------------------------------------------------------
+# -- symbols ----------------------------------------------------------------------
+
+
+@router.get("/run")
+def current_run() -> dict:
+    return {"run_id": pipeline.run_id}
+
+
+@router.post("/flush")
+async def flush_run() -> dict:
+    return await pipeline.flush_now()
 
 
 @router.get("/symbols")
@@ -187,6 +199,7 @@ def submit_order(
     engine = registry.book(symbol)
     try:
         events = engine.submit(order)
+        pipeline.record(symbol, engine, events)
     except OrderError as error:
         raise HTTPException(status_code=400, detail=str(error))
     _collect_trades(symbol, events)
@@ -206,6 +219,7 @@ def cancel_order(
 ) -> dict:
     engine = registry.book(symbol)
     outcome = engine.cancel(order_id=order_id, agent_id=body.agent_id)
+    pipeline.record(symbol, engine, [outcome])
     return {"outcome": _event_as_dict(outcome)}
 
 
@@ -226,6 +240,7 @@ def modify_order(
         )
     except OrderError as error:
         raise HTTPException(status_code=400, detail=str(error))
+    pipeline.record(symbol, engine, [outcome])
     return {"outcome": _event_as_dict(outcome)}
 
 
@@ -241,6 +256,7 @@ def feed_price(
         events = engine.update_market_price(body.price)
     except OrderError as error:
         raise HTTPException(status_code=400, detail=str(error))
+    pipeline.record(symbol, engine, events)
     _collect_trades(symbol, events)
     return {
         "symbol": symbol.upper(),

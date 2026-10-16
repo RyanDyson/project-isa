@@ -19,7 +19,7 @@ from sqlalchemy import delete as sqlalchemy_delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import service
-from app.auth.models import Account, Session, User
+from app.db.models import Account, Session, User
 from app.db import get_session
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])

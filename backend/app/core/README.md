@@ -23,7 +23,7 @@ The order types that will be covered by the LOB is as follow,
 | **StopOrder** | Remains dormant until the market hits the trigger price, then converts into a **MarketOrder**. | **Yes** (pre-trigger) |
 | **StopLimitOrder** | Remains dormant until the market hits the trigger price, then converts into a **LimitOrder** (allowed to cross). | **Yes** (pre-trigger) |
 
-### Idea & Architecture
+### Idea 
 ![alt text](./assets/image.png)
 
 Following implementations of actual LOB and matching engines, we will use a FIFO and Price-Time priority to determine the execution order of entries in the LOB. 
@@ -34,7 +34,27 @@ Following implementations of actual LOB and matching engines, we will use a FIFO
 * **AVL Trees:** Each binary tree is implemented as an **AVL tree**, where each node represents a specific **price level** to keep the tree balanced and ensure $O(\log M)$ search/insertion times.
 * **Node:** Each node (price level) is a doubly linked list inserted based on order submission time (FIFO).
 
-The module and its `LimitOrderBook` facade manage the full order lifecycle: submission runs validation and inline matching immediately, cancellation and modify reposition orders in place (fresh time priority for price/size changes), and stop orders rest in their own trees until the engine is fed the last traded price.
+### Architecture
+
+#### File Structure
+app/core/                          # simulation core
+├── lob/                           # Limit Order Book engine (package)
+│   ├── __init__.py                #   public API re-exports (single import point)
+│   ├── contracts.py               #   enums (Side/OrderType/OrderStatus), errors, tick math
+│   ├── orders.py                  #   the five public order types (submission model)
+│   ├── events.py                  #   engine events (Accepted/Trade/Rejected/...)
+│   ├── nodes.py                   #   internal Order node + Limit price level (C++ structs)
+│   ├── book.py                    #   Book: price ladders, sentinels, sweeps, stops, invariants
+│   ├── engine.py                  #   LimitOrderBook facade: lifecycle, records, triggers
+│   └── registry.py                #   SymbolRegistry: one single-writer book per ticker
+├── aggregator/
+│   └── metrics.py                 # Market Metrics Aggregator (in progress)
+├── README.md                      # architecture doc (this file)
+└── assets/                        # diagrams
+
+
+#### Historical Orders and Caching
+
 
 ### Time Complexity
 

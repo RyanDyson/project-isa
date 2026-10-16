@@ -27,6 +27,11 @@ import random
 import time
 from dataclasses import dataclass
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # backend/
+
 from app.core.lob import (
     LimitOrder,
     LimitOrderBook,

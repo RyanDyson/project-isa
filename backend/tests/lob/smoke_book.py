@@ -1,8 +1,13 @@
-"""Smoke checks for the AVL/DLL order book port (dev stage).
+"""Smoke checks for the order book port (dev stage).
 
-Run:  uv run python smoke_book.py   (from backend/)
+Run:  uv run python tests/lob/smoke_book.py   (from backend/)
 Temporary scaffolding; becomes the pytest/Hypothesis suite next.
 """
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # backend/
 
 from app.core.lob import (
     Accepted,

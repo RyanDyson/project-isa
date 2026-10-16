@@ -131,20 +131,25 @@ Email/password authentication is implemented in the FastAPI backend (`app/auth/`
 ## Repository Structure
 
 ```
-Codebase/
+project-isa/
 ├── backend/                # Simulation backend (Python)
 │   ├── app/
 │   │   ├── main.py         # FastAPI API layer entrypoint (+ /api/auth routes)
 │   │   ├── config.py       # Settings from .env
-│   │   ├── auth/           # Better Auth-compatible endpoints, ORM models
-│   │   ├── db/             # Async SQLAlchemy engine/session
-│   │   ├── core/           # Simulation core: LOB engine, metrics aggregator
+│   │   ├── api/            # REST surface (/api/market/*)
+│   │   ├── auth/           # Better Auth-compatible endpoints
+│   │   ├── core/           # Simulation core: lob/ package + metrics aggregator
+│   │   ├── db/             # Async SQLAlchemy engine + models (auth + market)
 │   │   ├── ingestion/      # Replay/synthetic generator, normalizer/book seeder
 │   │   ├── agents/         # Agent pool, Gymnasium env, order queue
-│   │   └── storage/        # Redis fast layer, PostgreSQL persistence
-│   ├── docker-compose.yml  # Redis + PostgreSQL containers
+│   │   └── storage/        # Redis fast layer, PostgreSQL persistence pipeline
+│   ├── docker-compose.yml  # Redis + PostgreSQL + lob-engine containers
 │   └── pyproject.toml      # uv-managed dependencies
-└── frontend/               # Dashboard (Next.js + React)
+├── frontend/               # Dashboard (Next.js + React)
+└── lob_engine/             # C++ LOB microservice (Redis Streams in/out)
+    ├── CMakeLists.txt
+    ├── Dockerfile
+    └── src/main.cpp
 ```
 
 ## Getting Started

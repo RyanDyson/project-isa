@@ -22,7 +22,7 @@ from .events import (
     StopTriggered,
     Trade,
 )
-from .nodes import Order
+from .nodes import Order  # noqa: F401  (re-exported through package __init__)
 from .orders import (
     BaseOrder,
     LimitOrder,
@@ -55,6 +55,11 @@ class LimitOrderBook:
         self._next_order_id = 1
         self._next_sequence = 1
         self._last_trade_price: float | None = None
+
+    def _next_event_seq(self) -> int:
+        sequence = self._next_sequence
+        self._next_sequence += 1
+        return sequence
 
     # -- reads ------------------------------------------------------------
 
@@ -113,7 +118,9 @@ class LimitOrderBook:
                 )
                 converted = _converted_public_order(order)
                 events: list[EngineEvent] = [
-                    StopTriggered(order_id=order_id, converted=converted)
+                    StopTriggered(
+                        order_id=order_id, converted=converted, sequence=sequence
+                    )
                 ]
                 self._activate_stop(node)
                 events.extend(self._run_node(node, allow_cross=True))
@@ -231,6 +238,7 @@ class LimitOrderBook:
                 StopTriggered(
                     order_id=node.id_number,
                     converted=_converted_public_order(record.order),
+                    sequence=self._next_event_seq(),
                 )
             )
             self._activate_stop(node)
@@ -251,14 +259,14 @@ class LimitOrderBook:
         if record.status is OrderStatus.PENDING_TRIGGER:
             self._book.cancel(record.node)
             record.status = OrderStatus.CANCELLED
-            return Cancelled(order_id)
+            return Cancelled(order_id, sequence=self._next_event_seq())
         if record.status is OrderStatus.ACTIVE and working_type in (
             OrderType.LIMIT,
             OrderType.MARKET_LIMIT,
         ):
             self._book.cancel(record.node)
             record.status = OrderStatus.CANCELLED
-            return Cancelled(order_id)
+            return Cancelled(order_id, sequence=self._next_event_seq())
         return Rejected(
             record.order, f"{working_type} in status {record.status} is not cancellable"
         )
@@ -368,7 +376,7 @@ class LimitOrderBook:
                 record.order = updated
                 record.sequence = sequence
                 record.node = new_node
-            return Modified(updated)
+            return Modified(updated, sequence=sequence)
 
         # In-place pure quantity update.
         node = record.node
@@ -378,7 +386,7 @@ class LimitOrderBook:
             level.total_volume += quantity - node.shares
             node.shares = quantity
         record.order = replace(record.order, **requested)
-        return Modified(record.order)
+        return Modified(record.order, sequence=self._next_event_seq())
 
     def _assert_rekey_does_not_cross(self, updated: BaseOrder) -> None:
         """A rekeyed resting limit must not cross (matches Add policy)."""

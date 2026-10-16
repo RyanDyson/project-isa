@@ -7,6 +7,16 @@ services:
     volumes:
       - redis-data:/data
 
+  lob-engine:
+    build: ../lob_engine
+    container_name: lob-engine
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      - redis
+    restart: unless-stopped
+
   postgres:
     image: postgres:17-alpine
     container_name: backend-postgres

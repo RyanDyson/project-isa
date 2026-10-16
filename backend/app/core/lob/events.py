@@ -21,17 +21,20 @@ class Rejected:
 @dataclass(frozen=True, slots=True)
 class Modified:
     order: BaseOrder
+    sequence: int
 
 
 @dataclass(frozen=True, slots=True)
 class Cancelled:
     order_id: int
+    sequence: int
 
 
 @dataclass(frozen=True, slots=True)
 class StopTriggered:
     order_id: int
     converted: BaseOrder
+    sequence: int
 
 
 @dataclass(frozen=True, slots=True)

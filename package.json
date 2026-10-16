@@ -2,9 +2,10 @@
   "name": "fyp-codebase",
   "private": true,
   "scripts": {
-    "dev": "concurrently -k -n frontend,backend -c cyan,green \"bun --cwd frontend dev\" \"bun --cwd backend dev\"",
+    "dev": "concurrently -k -n lob,frontend,backend -c magenta,cyan,green \"bun run lob:dev\" \"bun --cwd frontend dev\" \"bun --cwd backend dev\"",
     "dev:frontend": "bun --cwd frontend dev",
-    "dev:backend": "bun --cwd backend dev"
+    "dev:backend": "bun --cwd backend dev",
+    "lob:dev": "docker compose -f backend/docker-compose.yml up --build --abort-on-container-exit lob-engine"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"

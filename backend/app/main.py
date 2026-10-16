@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.market import pipeline as market_pipeline
 from app.api.market import router as market_router
 from app.auth import router as auth_router
 from app.auth import service as auth_service
@@ -14,7 +15,9 @@ CORS_ORIGINS = ["http://localhost:3000"]
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await market_pipeline.start()
     yield
+    await market_pipeline.aclose()
 
 app = FastAPI(title="Market Simulation Backend", lifespan=lifespan)
 

@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.models import Account, Session, User
+from app.db.models import Account, Session, User
 
 SCRYPT_N = 16384
 SCRYPT_R = 8
