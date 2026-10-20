@@ -37,16 +37,22 @@ Following implementations of actual LOB and matching engines, we will use a FIFO
 ### Architecture
 
 ```text
-src/core/book.hpp   public API: OrderBook, SubmitRequest/ModifyRequest, Event/EventSink
-src/core/book.cpp   engine internals:
-                      LevelTree     - AVL tree of price levels (per side)
-                      PriceLevel    - AVL node + intrusive FIFO list head/tail
-                      Order         - pool-allocated, linked into FIFO lists
-                      State         - engine: pools, id map, price indexes,
-                                      matching, dormant-stop books, triggers
-tests/              self-contained test harness + scenarios (no deps)
-bench/              throughput benchmark (no deps)
+src/core/book.hpp           public API: OrderBook, SubmitRequest/ModifyRequest, Event/EventSink
+src/core/book.cpp           thin facade over the internal State class
+src/core/nodes.hpp          internal node types: Order (intrusive FIFO), PriceLevel (AVL node)
+src/core/level_tree.hpp     AVL tree of price levels (structure + inline hot paths)
+src/core/level_tree.cpp     AVL implementation (insert/remove/rebalance)
+src/core/state.hpp          internal engine state: data + inline link/unlink + declarations
+src/core/state_pools.cpp    constructor, object pools, price-level book-keeping
+src/core/state_matching.cpp taker sweeps, taker lifecycle, dormant-stop trigger drain
+src/core/state_commands.cpp validation + submit / cancel / modify
+src/core/state_queries.cpp  queries + full invariant audit
+tests/                      self-contained test harness + scenarios (no deps)
+bench/                      throughput benchmark (no deps)
 ```
+
+Builds link with `-flto` so cross-module calls stay inlined (throughput is
+at parity with the pre-split single-file engine).
 
 - **Data structures:** one AVL tree per side keyed by price (bids, asks) plus
   two dormant-stop trees keyed by trigger price. Each tree node owns an
@@ -109,14 +115,38 @@ the benchmark both call it.
 ### Throughput
 
 Single-threaded in-memory core (no serialization, no Redis; Docker Desktop
-on Windows, `gcc:13 -O3`):
+on Windows, `gcc:13 -O3`, two-sided book, 201 price levels):
 
-| scenario       | ops/s         | trades/s   |
-| -------------- | ------------- | ---------- |
-| build-depth    | ~12.3 million | -          |
-| steady-matching| ~27 million   | ~6.8 m     |
-| cancel-churn   | ~7 million    | -          |
-| mixed-workload | ~16 million   | ~2.8 m     |
+| scenario        | ops/s       | trades/s |
+| --------------- | ----------- | -------- |
+| build-depth     | ~15 million | -        |
+| steady-matching | ~28 million | ~7.3 M   |
+| cancel-churn    | ~7.3 million| -        |
+| mixed-workload  | ~18 million | ~3.0 M   |
+
+Per-operation latency (sampled 1-in-16; partial timing includes ~45 ns of
+two `steady_clock` calls):
+
+| workload | p50     | p90     | p99     | p99.9   |
+| -------- | ------- | ------- | ------- | ------- |
+| matching | 62 ns   | 85 ns   | ~130 ns | ~260 ns |
+| cancel   | 42 ns   | 45 ns   | ~55 ns  | ~65 ns  |
+
+The cancel path is an O(1) intrusive unlink; its true cost sits at the
+clock-measurement floor.
+
+**Scaling with book size** (`LOB_LEVELS=N` widens the depth scenarios):
+
+| price levels | build-depth ops/s | steady-matching ops/s |
+| ------------ | ----------------- | --------------------- |
+| 201          | ~15.1 M           | ~28 M                 |
+| 2000         | ~15.1 M           | ~29 M                 |
+| 10000        | ~11.5 M           | ~18 M                 |
+
+Throughput stays essentially flat up to a few thousand levels (the AVL
+insert fix-up stops early at the first ancestor whose subtree height is
+unchanged) and degrades gracefully at 10000 levels where traversal pointer
+chasing starts missing cache.
 
 Every scenario re-audits the book afterwards; a violation aborts with a
 description.
