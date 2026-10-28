@@ -122,6 +122,7 @@ bool OrderBook::State::cancel(std::uint64_t order_id) {
 }
 
 bool OrderBook::State::modify(std::uint64_t order_id, const ModifyRequest &req) {
+
     auto it = by_id.find(order_id);
     if (it == by_id.end()) {
         Event ev = make(EventKind::Rejected, order_id);
@@ -148,6 +149,7 @@ bool OrderBook::State::modify(std::uint64_t order_id, const ModifyRequest &req) 
             o.stop_price = req.new_stop_price;
             link_stop(level_for(dormant_side(o.side), o.stop_price), o);
             changed = true;
+            trigger_pass();  // a moved trigger past the market fires immediately
         }
         if (req.has_new_price && req.new_price != o.limit_price) {
             o.limit_price = req.new_price;
@@ -189,3 +191,4 @@ bool OrderBook::State::modify(std::uint64_t order_id, const ModifyRequest &req) 
 }
 
 }  // namespace lob
+

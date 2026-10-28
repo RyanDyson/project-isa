@@ -103,6 +103,14 @@ inline lob::SubmitRequest stop_limit(lob::Side side, double trigger, double limi
     return mk(lob::Type::StopLimit, side, qty, limit_price, trigger, id);
 }
 
+// find an event of one kind carrying an exact order id (Triggered/Modified/...)
+inline bool carries(const Recorder &r, lob::EventKind kind, std::uint64_t order_id) {
+    for (const auto &e : r.events) {
+        if (e.kind == kind && e.order_id == order_id) return true;
+    }
+    return false;
+}
+
 inline void expect_healthy(const lob::OrderBook &book) {
     const std::string error = book.audit();
     if (!error.empty()) fail("audit: " + error);

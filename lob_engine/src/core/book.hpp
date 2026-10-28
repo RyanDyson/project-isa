@@ -30,6 +30,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace lob {
 
@@ -87,6 +88,8 @@ class OrderBook {
 public:
     // `sink` receives lifecycle/trade events synchronously inside submit,
     // cancel, and modify. Nullptr installs a no-op sink (benchmarks).
+    // Every mutating call also accepts an optional per-call sink that
+    // temporarily overrides the default (one shared book, many commands).
     explicit OrderBook(EventSink *sink = nullptr);
     ~OrderBook();
     OrderBook(const OrderBook &) = delete;
@@ -100,17 +103,22 @@ public:
     //   MarketableLimit   - taker phase first, remainder rests at limit price.
     //   StopOrder         - dormant until trigger, then acts as MarketOrder.
     //   StopLimit         - dormant until trigger, then acts as MarketableLimit.
-    std::uint64_t submit(const SubmitRequest &request);
+    std::uint64_t submit(const SubmitRequest &request, EventSink *per_call_sink = nullptr);
 
     // Cancels a resting limit or a dormant (pre-trigger) stop. Returns false
     // (and emits Rejected "unknown-order") when the id is not live.
-    bool cancel(std::uint64_t order_id);
+    bool cancel(std::uint64_t order_id, EventSink *per_call_sink = nullptr);
 
     // Modifies a resting limit or dormant stop.
     //  - quantity decrease keeps time priority: O(1)
-    //  - quantity increase or price change re-books the order lose priority)
+    //  - quantity increase or price change re-books (loses time priority)
     // Stop-limit modification (price only) keeps queue position.
-    bool modify(std::uint64_t order_id, const ModifyRequest &request);
+    bool modify(std::uint64_t order_id, const ModifyRequest &request,
+                EventSink *per_call_sink = nullptr);
+
+    // Market-data feed (standing in for the price pipeline): sets the last
+    // traded price and immediately runs dormant-stop triggers.
+    void update_last_price(Price price, EventSink *per_call_sink = nullptr);
 
     std::optional<Price> best_bid() const;
     std::optional<Price> best_ask() const;
@@ -123,6 +131,12 @@ public:
 
     // Total dormant quantity at a stop trigger price. O(1).
     Quantity stop_volume_at(Side side, Price trigger_price) const;
+
+    // Number of distinct orders resting at a price level.
+    std::size_t level_size(Side side, Price price) const;
+
+    // All resting prices on a side, ascending by price.
+    std::vector<Price> resting_prices(Side side) const;
 
     // Number of live orders (resting + dormant stops).
     std::size_t order_count() const;

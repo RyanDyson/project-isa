@@ -12,8 +12,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(json)
 
 add_executable(lob-engine src/main.cpp)
-
-target_link_libraries(lob-engine PRIVATE hiredis pthread nlohmann_json::nlohmann_json)
+target_link_libraries(lob-engine PRIVATE hiredis pthread nlohmann_json::nlohmann_json lob_core)
 
 # ---------------------------------------------------------------------------
 # LOB matching core: no external dependencies. Modules:
