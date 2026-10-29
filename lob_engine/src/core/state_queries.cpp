@@ -29,6 +29,30 @@ Quantity OrderBook::State::stop_volume_at(Side side, Price trigger) const {
     return it != index.end() ? it->second->total : 0;
 }
 
+std::size_t OrderBook::State::level_size(Side side, Price price) const {
+    const LevelTree &tree = side == Side::Buy ? bids : asks;
+    const PriceLevel *lvl = tree.find(price);
+    return lvl != nullptr ? lvl->depth : 0;
+}
+
+std::vector<Price> OrderBook::State::resting_prices(Side side) const {
+    // in-order traversal of the side's AVL tree (ascending by price)
+    std::vector<Price> out;
+    const LevelTree &tree = side == Side::Buy ? bids : asks;
+    std::vector<const PriceLevel *> stack;
+    for (const PriceLevel *n = tree.root; n != nullptr || !stack.empty();) {
+        while (n != nullptr) {
+            stack.push_back(n);
+            n = n->left;
+        }
+        n = stack.back();
+        stack.pop_back();
+        out.push_back(n->price);
+        n = n->right;
+    }
+    return out;
+}
+
 // ------------------------------------------------------------------- audit
 
 std::string OrderBook::State::audit() const {

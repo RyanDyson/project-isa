@@ -183,6 +183,9 @@ struct OrderBook::State {
     bool cancel(std::uint64_t order_id);
     bool modify(std::uint64_t order_id, const ModifyRequest &req);
 
+    // external market-data tick: may trip dormant stops
+    void update_last_price(Price price);
+
     // ----------------------------------------------- queries (state_queries.cpp)
 
     std::optional<Price> best_bid() const;
@@ -192,6 +195,9 @@ struct OrderBook::State {
     Quantity stop_volume_at(Side side, Price trigger) const;
 
     std::size_t order_count() const { return by_id.size(); }
+
+    std::size_t level_size(Side side, Price price) const;
+    std::vector<Price> resting_prices(Side side) const;
 
     // all invariants; empty string = healthy
     std::string audit() const;

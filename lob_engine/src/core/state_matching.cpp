@@ -97,4 +97,10 @@ void OrderBook::State::trigger_pass() {
     }
 }
 
+// External market-data feed (the ingestion pipeline's price tick).
+void OrderBook::State::update_last_price(Price price) {
+    s_last(price);
+    trigger_pass();
+}
+
 }  // namespace lob

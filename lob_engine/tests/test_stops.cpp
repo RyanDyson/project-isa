@@ -202,6 +202,72 @@ LOB_TEST(stop_of_both_sides_rest_before_any_trade) {
     lobtest::expect_healthy(book);
 }
 
+LOB_TEST(level_size_and_resting_price_queries) {
+    lobtest::Recorder sink;
+    lob::OrderBook book(&sink);
+    EXPECT_EQ(book.submit(lobtest::limit(Side::Buy, 99.0, 5)), 1u);
+    EXPECT_EQ(book.submit(lobtest::limit(Side::Buy, 99.0, 3, 2)), 2u);
+    EXPECT_EQ(book.submit(lobtest::limit(Side::Buy, 98.5, 1, 3)), 3u);
+    EXPECT_EQ(book.submit(lobtest::limit(Side::Sell, 100.5, 2, 4)), 4u);
+
+    EXPECT_EQ(book.level_size(Side::Buy, 99.0), 2u);
+    EXPECT_EQ(book.level_size(Side::Buy, 98.5), 1u);
+    EXPECT_EQ(book.level_size(Side::Buy, 97.0), 0u);
+    EXPECT_EQ(book.level_size(Side::Sell, 100.5), 1u);
+
+    const auto buy_prices = book.resting_prices(Side::Buy);
+    EXPECT_EQ(buy_prices.size(), 2u);
+    EXPECT(buy_prices[0] == 98.5 && buy_prices[1] == 99.0);  // ascending
+    const auto sell_prices = book.resting_prices(Side::Sell);
+    EXPECT_EQ(sell_prices.size(), 1u);
+    EXPECT(sell_prices[0] == 100.5);
+    lobtest::expect_healthy(book);
+}
+
+LOB_TEST(external_price_feed_triggers_dormant_stops) {
+    lobtest::Recorder sink;
+    lob::OrderBook book(&sink);
+    EXPECT_EQ(book.submit(lobtest::stop(Side::Buy, 110.0, 2)), 1u);
+    EXPECT_EQ(book.submit(lobtest::stop(Side::Sell, 90.0, 3)), 2u);
+    EXPECT_EQ(sink.count(EventKind::Triggered), 0u);
+
+    // a fed market price is not a trade: no trade events, but any stops whose
+    // trigger is met convert and sweep the (empty) book
+    EXPECT_EQ(book.stop_volume_at(Side::Buy, 110.0), 2);
+    book.update_last_price(110.0);
+    EXPECT_EQ(sink.count(EventKind::Triggered), 1u);
+    EXPECT(carries(sink, EventKind::Triggered, 1u));
+    book.update_last_price(90.0);
+    EXPECT_EQ(sink.count(EventKind::Triggered), 2u);
+
+    // the converted orders had nothing to fill: remainder cancelled
+    for (const auto &e : sink.of_kind(EventKind::Cancelled)) {
+        EXPECT(e.order_id == 1u || e.order_id == 2u);
+    }
+    lobtest::expect_healthy(book);
+}
+
+LOB_TEST(modify_stop_price_to_met_trigger_fires_it) {
+    lobtest::Recorder sink;
+    lob::OrderBook book(&sink);
+    EXPECT_EQ(book.submit(lobtest::limit(Side::Sell, 100.0, 1)), 1u);
+    EXPECT_EQ(book.submit(lobtest::marketable(Side::Buy, 100.0, 1)), 2u);  // last = 100
+    EXPECT_EQ(book.stop_volume_at(Side::Sell, 90.0), 0);
+    EXPECT_EQ(book.submit(lobtest::stop(Side::Sell, 90.0, 3)), 3u);  // dormant
+
+    // move the trigger up to something the last price already met
+    lob::ModifyRequest req;
+    req.has_new_stop_price = true;
+    req.new_stop_price = 100.0;
+    EXPECT(book.modify(3u, req));
+    EXPECT_EQ(sink.count(EventKind::Triggered), 1u);
+    EXPECT(carries(sink, EventKind::Triggered, 3u));
+    // converted market sell with nothing left on the bid side → cancelled
+    const auto cancelled = sink.of_kind(EventKind::Cancelled);
+    EXPECT(!cancelled.empty() && cancelled.back().order_id == 3u && cancelled.back().quantity == 3);
+    lobtest::expect_healthy(book);
+}
+
 LOB_TEST(stop_trigger_order_is_price_then_time) {
     lobtest::Recorder sink;
     lob::OrderBook book(&sink);
@@ -226,3 +292,4 @@ LOB_TEST(stop_trigger_order_is_price_then_time) {
     EXPECT_EQ(triggered[1].order_id, 3u);  // then 97
     lobtest::expect_healthy(book);
 }
+
